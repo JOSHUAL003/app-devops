@@ -57,3 +57,186 @@ This project demonstrates practical experience with Infrastructure as Code (IaC)
 - IAM Roles with least privilege
 - CloudWatch monitoring
 - Infrastructure separated into modular Terraform files
+
+
+# Project Walkthrough
+
+## Step 1 – Build and Run the Application Locally using Docker
+
+Before deploying to AWS, the application was tested locally using Docker Compose.
+
+The following command was used to build the Docker image and start all required containers.
+
+```bash
+docker compose up -d --build
+```
+
+This performs the following tasks:
+
+- Builds the Flask application Docker image using the Dockerfile.
+- Pulls the MySQL 8.4 image from Docker Hub.
+- Creates the application and database containers.
+- Starts both containers in detached mode.
+- Exposes the Flask application on port **5000**.
+
+After the containers started successfully, the following commands were used to verify the deployment.
+
+```bash
+docker ps
+docker images
+```
+
+
+<img width="1917" height="782" alt="Screenshot from 2026-06-28 19-14-09" src="https://github.com/user-attachments/assets/a07f6e7c-3707-4c2b-a8d4-0ab9bbc86651" />
+
+## Step 2 – Continuous Integration using GitHub Actions
+
+After verifying that the application worked locally, the source code was pushed to the GitHub repository.
+
+A GitHub Actions workflow was configured to automatically build and publish the Docker image whenever changes are pushed to the **main** branch.
+
+The workflow performs the following tasks:
+
+- Checks out the latest source code.
+- Configures AWS credentials using GitHub Secrets.
+- Authenticates with Amazon Elastic Container Registry (ECR).
+- Builds the Docker image.
+- Tags the image.
+- Pushes the latest image to the private Amazon ECR repository.
+
+This eliminates the need to manually build and upload Docker images, providing an automated Continuous Integration (CI) pipeline.
+<img width="1866" height="691" alt="Screenshot from 2026-06-28 19-22-46" src="https://github.com/user-attachments/assets/f34dcdc6-956f-4e54-b101-bdd7a723b43d" />
+
+
+## Step 3 – Store the Docker Image in Amazon Elastic Container Registry (ECR)
+
+Once the GitHub Actions workflow completed successfully, the Docker image was automatically pushed to a private Amazon Elastic Container Registry (ECR) repository.
+
+Amazon ECR serves as the central image repository for the application. Instead of building the image directly on the ECS cluster, ECS simply pulls the latest image from ECR whenever a new deployment is performed.
+
+This approach provides a secure and scalable way to store, manage, and version container images.
+
+The repository also has image scanning enabled, allowing vulnerabilities in the Docker image to be detected before deployment.
+
+The following screenshots show the private ECR repository, the uploaded Docker image, and the vulnerability scan results.
+
+<img width="1907" height="445" alt="Screenshot from 2026-06-28 10-51-35" src="https://github.com/user-attachments/assets/39df0fff-a902-445f-a6f1-117b21e13101" />
+
+The private Amazon ECR repository stores the Docker images used for deployment.
+
+
+<img width="1905" height="738" alt="Screenshot from 2026-06-28 10-52-01" src="https://github.com/user-attachments/assets/287b7496-c33c-4f85-9aff-949e6f42d533" />
+
+
+The latest Docker image has been successfully pushed to Amazon ECR by the GitHub Actions workflow.
+
+
+## Step 4 – Provision AWS Infrastructure using Terraform
+
+After the Docker image was successfully pushed to Amazon ECR, the AWS infrastructure was provisioned using **Terraform**.
+
+Terraform was used as the Infrastructure as Code (IaC) tool to automate the creation of all AWS resources required to host the application. Instead of manually creating resources through the AWS Console, the entire infrastructure can be recreated consistently from the Terraform configuration files.
+
+The following AWS resources were provisioned:
+
+- Virtual Private Cloud (VPC)
+- Public and Private Subnets
+- Internet Gateway
+- NAT Gateway
+- Route Tables
+- Security Groups
+- Amazon RDS (MySQL)
+- Amazon ECS Cluster
+- Amazon ECS Service
+- Amazon ECS Task Definition
+- Application Load Balancer (ALB)
+- Target Group
+- IAM Roles
+- Amazon CloudWatch Log Group
+
+The screenshots below shows the VPC architecture created by Terraform, including public and private subnets, route tables, Internet Gateway, and NAT Gateway.
+
+<img width="1872" height="911" alt="Screenshot from 2026-06-28 10-55-48" src="https://github.com/user-attachments/assets/a488024a-c667-4ec9-a262-999febbce675" />
+
+
+
+## Step 5 – Deploy the Amazon RDS MySQL Database
+
+The application uses **Amazon RDS MySQL** as its managed relational database.
+
+Terraform provisioned the RDS instance inside the private subnets of the VPC, ensuring that the database is not publicly accessible from the internet. Only the ECS application can connect to the database through the configured security groups.
+
+Using Amazon RDS removes the need to install, configure, and manage MySQL on a virtual machine while providing automated backups, monitoring, and high availability features.
+
+The screenshot below shows the successfully deployed RDS MySQL instance.
+
+<img width="1872" height="911" alt="Screenshot from 2026-06-28 10-54-44" src="https://github.com/user-attachments/assets/59577936-fc88-4711-89d1-522d022eb7ea" />
+
+## Step 6 – Create the Amazon ECS Cluster
+
+After provisioning the networking and database infrastructure, an **Amazon ECS (Elastic Container Service) Cluster** was created using Terraform.
+
+The ECS Cluster acts as the logical environment that hosts the containerized application. This project uses the **AWS Fargate** launch type, allowing containers to run without managing or provisioning EC2 instances.
+
+Using Fargate eliminates server management tasks such as operating system updates, capacity planning, and instance maintenance, enabling the application to run on fully managed infrastructure.
+
+The screenshot below shows the ECS Cluster with the deployed service and running task.
+
+<img width="1905" height="738" alt="Screenshot from 2026-06-28 10-52-26" src="https://github.com/user-attachments/assets/08a40cbc-2c16-4a75-ac32-f992cd9ff290" />
+
+## Step 7 – Create the ECS Task Definition
+
+The **Amazon ECS Task Definition** acts as a blueprint for running the containerized application on AWS Fargate.
+
+It defines how the application should run, including the Docker image stored in Amazon ECR, CPU and memory allocation, networking mode, IAM roles, container port, and CloudWatch logging configuration.
+
+Whenever a new version of the application is deployed, Amazon ECS uses this task definition to launch the container.
+
+The screenshot below shows the task definition created for the Flask application.
+
+<img width="1872" height="911" alt="Screenshot from 2026-06-28 10-53-36" src="https://github.com/user-attachments/assets/4954c901-3f6c-458a-bfcb-d11cb750c95e" />
+
+
+## Step 8 – Deploy the Application using Amazon ECS Service
+
+After the task definition was created, an **Amazon ECS Service** was deployed using the AWS Fargate launch type.
+
+The ECS Service continuously maintains the desired number of running tasks. If a task stops unexpectedly, ECS automatically launches a replacement to maintain application availability.
+
+The service pulls the latest Docker image from Amazon ECR, launches the container, and registers it with the Application Load Balancer Target Group. Health checks ensure that only healthy containers receive incoming traffic.
+
+The screenshots below show the ECS Service and the running task after a successful deployment.
+
+<img width="1872" height="911" alt="Screenshot from 2026-06-28 10-53-15" src="https://github.com/user-attachments/assets/3f0f9a24-6f05-4d9b-8366-1330069d259c" />
+<img width="1872" height="911" alt="Screenshot from 2026-06-28 10-53-06" src="https://github.com/user-attachments/assets/9e1d70d4-0568-4d0e-be63-5628c61dc529" />
+
+
+## Step 9 – Configure the Application Load Balancer (ALB)
+
+An **Application Load Balancer (ALB)** was provisioned using Terraform to provide a single public entry point for the application.
+
+The ALB listens for incoming HTTP requests and forwards them to the ECS Service through a Target Group. This enables users to access the application using the ALB DNS name instead of connecting directly to the container.
+
+The Target Group continuously performs health checks on the running ECS task. Only healthy containers receive incoming traffic, improving application availability and reliability.
+
+The screenshots below show the Application Load Balancer and the healthy Target Group after deployment.
+
+<img width="1872" height="911" alt="Screenshot from 2026-06-28 10-54-19" src="https://github.com/user-attachments/assets/f9c5b5af-ec52-455d-8a70-0e5413385f4d" />
+
+*Application Load Balancer configured to receive incoming HTTP traffic and forward requests to the ECS Service.*
+
+
+<img width="1872" height="911" alt="Screenshot from 2026-06-28 10-54-04" src="https://github.com/user-attachments/assets/859b46ff-b950-439c-b588-8054dd28571c" />
+
+*The Target Group performs health checks and confirms that the ECS task is healthy and ready to receive traffic.*
+
+
+## Step 10 – Application Successfully Deployed
+
+The Flask application was successfully deployed on **Amazon ECS Fargate** and is publicly accessible through the **Application Load Balancer (ALB)**.
+
+The successful deployment confirms that the complete CI/CD pipeline, Docker containerization, Terraform infrastructure provisioning, and AWS services are working together to deliver the application.
+
+<img width="1918" height="989" alt="Screenshot from 2026-06-28 10-49-58" src="https://github.com/user-attachments/assets/e369bc28-67fd-46c0-935c-5fdb13b1dffe" />
+
+
