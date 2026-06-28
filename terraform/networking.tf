@@ -1,7 +1,3 @@
-
- VPC
-
-
 resource "aws_vpc" "main" {
 
   cidr_block           = "10.0.0.0/16"
@@ -14,10 +10,6 @@ resource "aws_vpc" "main" {
 
 }
 
-
- Internet Gateway
-
-
 resource "aws_internet_gateway" "igw" {
 
   vpc_id = aws_vpc.main.id
@@ -27,9 +19,6 @@ resource "aws_internet_gateway" "igw" {
   }
 
 }
-
-
- Public Subnet 1
 
 
 resource "aws_subnet" "public_subnet_1" {
@@ -46,7 +35,6 @@ resource "aws_subnet" "public_subnet_1" {
 }
 
 
- Public Subnet 2
 
 
 resource "aws_subnet" "public_subnet_2" {
@@ -63,8 +51,6 @@ resource "aws_subnet" "public_subnet_2" {
 }
 
 
- Private Subnet 1
-
 
 resource "aws_subnet" "private_subnet_1" {
 
@@ -80,7 +66,6 @@ resource "aws_subnet" "private_subnet_1" {
 }
 
 
- Private Subnet 2
 
 
 resource "aws_subnet" "private_subnet_2" {
@@ -97,8 +82,6 @@ resource "aws_subnet" "private_subnet_2" {
 }
 
 
- Elastic IP
-
 
 resource "aws_eip" "nat_eip" {
 
@@ -109,9 +92,6 @@ resource "aws_eip" "nat_eip" {
   }
 
 }
-
-
- NAT Gateway
 
 
 resource "aws_nat_gateway" "nat" {
@@ -128,9 +108,6 @@ resource "aws_nat_gateway" "nat" {
   }
 
 }
-
-
- Public Route Table
 
 
 resource "aws_route_table" "public" {
@@ -151,10 +128,6 @@ resource "aws_route_table" "public" {
 
 }
 
-
- Private Route Table
-
-
 resource "aws_route_table" "private" {
 
   vpc_id = aws_vpc.main.id
@@ -174,19 +147,12 @@ resource "aws_route_table" "private" {
 }
 
 
- Public Route Table Association 1
-
-
 resource "aws_route_table_association" "public1" {
 
   subnet_id      = aws_subnet.public_subnet_1.id
   route_table_id = aws_route_table.public.id
 
 }
-
-
- Public Route Table Association 2
-
 
 resource "aws_route_table_association" "public2" {
 
@@ -195,19 +161,12 @@ resource "aws_route_table_association" "public2" {
 
 }
 
-
- Private Route Table Association 1
-
-
 resource "aws_route_table_association" "private1" {
 
   subnet_id      = aws_subnet.private_subnet_1.id
   route_table_id = aws_route_table.private.id
 
 }
-
-
- Private Route Table Association 2
 
 
 resource "aws_route_table_association" "private2" {

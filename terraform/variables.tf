@@ -1,9 +1,9 @@
 variable "aws_region" {
   description = "AWS region"
-  default = "us-east-1"
+  default     = "us-east-1"
 }
 
-variable "project name" {
+variable "project_name" {
   description = "Project name"
-  default = "app-devops"
+  default     = "app-devops"
 }
