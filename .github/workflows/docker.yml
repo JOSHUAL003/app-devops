@@ -37,7 +37,8 @@ jobs:
         run:  docker tag app-devops:latest 975050125889.dkr.ecr.us-east-1.amazonaws.com/app-devops:latest
 
       - name: Force ECS Deployment
-        run: aws ecs update-service \
+        run: |
+              aws ecs update-service \
             --cluster app-devops-cluster \
             --service app-devops-service \
             --force-new-deployment
