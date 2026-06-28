@@ -89,7 +89,41 @@ docker images
 
 <img width="1917" height="782" alt="Screenshot from 2026-06-28 19-14-09" src="https://github.com/user-attachments/assets/a07f6e7c-3707-4c2b-a8d4-0ab9bbc86651" />
 
-## Step 2 – Continuous Integration using GitHub Actions
+## Step 2 – Provision AWS Infrastructure using Terraform
+
+Before configuring the CI/CD pipeline, the required AWS infrastructure was provisioned using **Terraform**.
+
+Terraform was used as the Infrastructure as Code (IaC) tool to automate the creation of all AWS resources required to host the application. This ensured that the infrastructure was reproducible, version-controlled, and could be deployed consistently without manual configuration through the AWS Console.
+
+The following Terraform commands were executed to provision the infrastructure:
+
+```bash
+terraform init
+terraform plan
+terraform apply
+```
+
+The following AWS resources were created:
+
+- Amazon VPC
+- Public & Private Subnets
+- Internet Gateway
+- NAT Gateway
+- Route Tables
+- Security Groups
+- IAM Roles
+- Amazon Elastic Container Registry (ECR)
+- Amazon ECS Cluster
+- Amazon ECS Task Definition
+- Amazon ECS Service
+- Application Load Balancer (ALB)
+- Target Group
+- Amazon RDS (MySQL)
+- Amazon CloudWatch Log Group
+
+Creating the infrastructure before configuring the CI/CD pipeline was essential because GitHub Actions requires an existing Amazon ECR repository to push Docker images and an existing Amazon ECS service to deploy new application versions.
+
+## Step 3 – Continuous Integration using GitHub Actions
 
 After verifying that the application worked locally, the source code was pushed to the GitHub repository.
 
@@ -108,7 +142,7 @@ This eliminates the need to manually build and upload Docker images, providing a
 <img width="1866" height="691" alt="Screenshot from 2026-06-28 19-22-46" src="https://github.com/user-attachments/assets/f34dcdc6-956f-4e54-b101-bdd7a723b43d" />
 
 
-## Step 3 – Store the Docker Image in Amazon Elastic Container Registry (ECR)
+## Step 4 – Store the Docker Image in Amazon Elastic Container Registry (ECR)
 
 Once the GitHub Actions workflow completed successfully, the Docker image was automatically pushed to a private Amazon Elastic Container Registry (ECR) repository.
 
@@ -131,34 +165,6 @@ The private Amazon ECR repository stores the Docker images used for deployment.
 The latest Docker image has been successfully pushed to Amazon ECR by the GitHub Actions workflow.
 
 
-## Step 4 – Provision AWS Infrastructure using Terraform
-
-After the Docker image was successfully pushed to Amazon ECR, the AWS infrastructure was provisioned using **Terraform**.
-
-Terraform was used as the Infrastructure as Code (IaC) tool to automate the creation of all AWS resources required to host the application. Instead of manually creating resources through the AWS Console, the entire infrastructure can be recreated consistently from the Terraform configuration files.
-
-The following AWS resources were provisioned:
-
-- Virtual Private Cloud (VPC)
-- Public and Private Subnets
-- Internet Gateway
-- NAT Gateway
-- Route Tables
-- Security Groups
-- Amazon RDS (MySQL)
-- Amazon ECS Cluster
-- Amazon ECS Service
-- Amazon ECS Task Definition
-- Application Load Balancer (ALB)
-- Target Group
-- IAM Roles
-- Amazon CloudWatch Log Group
-
-The screenshots below shows the VPC architecture created by Terraform, including public and private subnets, route tables, Internet Gateway, and NAT Gateway.
-
-<img width="1872" height="911" alt="Screenshot from 2026-06-28 10-55-48" src="https://github.com/user-attachments/assets/a488024a-c667-4ec9-a262-999febbce675" />
-
-
 
 ## Step 5 – Deploy the Amazon RDS MySQL Database
 
@@ -172,6 +178,7 @@ The screenshot below shows the successfully deployed RDS MySQL instance.
 
 <img width="1872" height="911" alt="Screenshot from 2026-06-28 10-54-44" src="https://github.com/user-attachments/assets/59577936-fc88-4711-89d1-522d022eb7ea" />
 
+
 ## Step 6 – Create the Amazon ECS Cluster
 
 After provisioning the networking and database infrastructure, an **Amazon ECS (Elastic Container Service) Cluster** was created using Terraform.
@@ -184,6 +191,7 @@ The screenshot below shows the ECS Cluster with the deployed service and running
 
 <img width="1905" height="738" alt="Screenshot from 2026-06-28 10-52-26" src="https://github.com/user-attachments/assets/08a40cbc-2c16-4a75-ac32-f992cd9ff290" />
 
+
 ## Step 7 – Create the ECS Task Definition
 
 The **Amazon ECS Task Definition** acts as a blueprint for running the containerized application on AWS Fargate.
@@ -195,6 +203,7 @@ Whenever a new version of the application is deployed, Amazon ECS uses this task
 The screenshot below shows the task definition created for the Flask application.
 
 <img width="1872" height="911" alt="Screenshot from 2026-06-28 10-53-36" src="https://github.com/user-attachments/assets/4954c901-3f6c-458a-bfcb-d11cb750c95e" />
+
 
 
 ## Step 8 – Deploy the Application using Amazon ECS Service
